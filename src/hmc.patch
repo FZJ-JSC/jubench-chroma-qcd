@@ -1,0 +1,12 @@
+--- hmc.cc	2022-08-26 14:30:09.285755000 +0200
++++ hmc_new.cc	2022-08-26 14:32:01.155562750 +0200
+@@ -656,7 +656,8 @@
+       }   
+       
+       // Save state
+-      saveState<UpdateParams>(update_params, mc_control, cur_update, gauge_state.getQ());
++      // turn off IO for Benchmark
++      //      saveState<UpdateParams>(update_params, mc_control, cur_update, gauge_state.getQ());
+       
+       pop(xml_log); // pop("MCUpdates")
+       pop(xml_out); // pop("MCUpdates")

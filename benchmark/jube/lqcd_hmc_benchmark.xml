@@ -1,0 +1,662 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jube>
+  <benchmark name="lqcd_hmc" outpath="bench_run_hmc">
+    <comment>LQCD HMC benchmark</comment>
+    
+
+    <parameterset name="environment">
+
+      <!-- SET the install dir appropriately -->
+
+      <parameter name="install_dir">"../../../../../../src/INSTALL/"</parameter>
+      <parameter name="load_modules">
+      
+export INSTALL_DIR=${install_dir}
+module load Stages/2022
+module load GCC/11.2.0
+module load CUDA/11.5
+module load ParaStationMPI/5.5.0-1
+module load GMP/6.2.1
+module load Eigen/3.3.9
+module load Python/3.9.6
+module load SciPy-Stack/2021b
+
+
+      </parameter>
+
+      <parameter name="exports" separator="|">
+# force a line break here
+	
+export EXEC_DIR=${INSTALL_DIR}/CHROMA/bin/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/LLVM/lib/:${INSTALL_DIR}/CHROMA/lib:${INSTALL_DIR}/QUDA/lib/:${INSTALL_DIR}/QDP-JIT/lib/:${INSTALL_DIR}/QMP/lib/
+export QUDA_RESOURCE_PATH=./QRP/
+export QDP_JIT_PATH=${QUDA_RESOURCE_PATH}/qdp_ptxdb
+export OMP_NUM_THREADS=24
+export QUDA_ENABLE_GDR=1
+export QUDA_ENABLE_DEVICE_MEMORY_POOL=0
+export GPUDIRECT='-gpudirect'
+export CUDA_DEVICE_MAX_CONNECTIONS=1
+export BINDING=' --cpu-bind=none'
+mkdir -p $QUDA_RESOURCE_PATH
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+export SRUN_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK}
+
+
+      </parameter>
+
+    </parameterset>
+
+
+    
+    <parameterset name="systemParameter" init_with="platform.xml">
+
+      <!-- This block is for the default, non-high-scale benchmark -->
+
+      <parameter name="i">0, 1, 2 </parameter> 
+
+      <parameter name="nodes" mode="python" type="int">      [  8, 4, 16][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int">      [ 32, 16, 64][$i]</parameter>      
+
+      <parameter name="ttasks" mode="python" type="int">     [  8, 8, 16][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int">     [  4, 2, 4][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int">     [  1, 1, 1][$i]</parameter>     
+      <parameter name="xtasks" mode="python" type="int">     [  1, 1, 1][$i]</parameter>     
+
+      <parameter name="sliced_dims" mode="python" type="int" >[  2,2 ,2][$i]</parameter>
+      
+      
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int">    [  0, 4, 0][$i]</parameter>      
+      <!-- part_idx controls the slurm partition; should not have to change for default benchmark  -->
+      <parameter name="part_idx" mode="python" type="int">    [  0, 0, 0 ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int">     [  0, 0, 0 ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates - DON'T MESS WITH THIS -->
+      <parameter name="update_idx" mode="python" type="int">  [  2, 2, 2][$i]</parameter>
+      <!-- End default block-->
+
+
+
+
+
+
+      <!-- Block of parameters for small_test runs (full GPU mem on A100 )-->
+      <parameter name="i" tag="small_test">0</parameter>       
+      <parameter name="nodes" mode="python" type="int" tag="small_test">      [  1 ][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="small_test">      [ 4 ][$i]</parameter>      
+
+      <!-- the product of  $xtasks*$ytasks*$ztasks*$ttasks must= $tasks above -->
+      <parameter name="ttasks" mode="python" type="int" tag="small_test">     [ 4  ][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="small_test">     [ 1  ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="small_test">     [ 1  ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="small_test">     [1  ][$i]</parameter>
+
+      <!-- the number of the above dimensions where tasks != 1; only for reference in results table. -->
+      <parameter name="sliced_dims" mode="python" type="int" tag="small_test">[  1  ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="small_test">   [   1  ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="small_test">   [   2  ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="small_test">    [   0  ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates - DON'T MESS WITH THIS -->
+      <parameter name="update_idx" mode="python" type="int" tag="small_test"> [   2  ][$i]</parameter>
+      <!-- End highscale_large block-->
+
+
+
+
+
+
+      
+
+      <!-- Blocks of parameters for highscale tests -->
+
+
+      <!-- Block of parameters for highscale_large runs (full GPU mem on A100 )-->
+      <parameter name="i" tag="highscale_large">0</parameter>       
+      <parameter name="nodes" mode="python" type="int" tag="highscale_large">      [  512,  768 ][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="highscale_large">      [ 2048, 3072 ][$i]</parameter>      
+
+      <!-- the product of  $xtasks*$ytasks*$ztasks*$ttasks must= $tasks above -->
+      <parameter name="ttasks" mode="python" type="int" tag="highscale_large">     [  16,   24  ][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="highscale_large">     [  16,   16  ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="highscale_large">     [   8,    8  ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="highscale_large">     [   1,    1  ][$i]</parameter>
+
+      <!-- the number of the above dimensions where tasks != 1; only for reference in results table. -->
+      <parameter name="sliced_dims" mode="python" type="int" tag="highscale_large">[   3,    3  ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="highscale_large">   [   3,    3  ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="highscale_large">   [   1,    1  ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="highscale_large">    [   0,    1  ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates - DON'T MESS WITH THIS -->
+      <parameter name="update_idx" mode="python" type="int" tag="highscale_large"> [   0,    0  ][$i]</parameter>
+      <!-- End highscale_large block-->
+
+
+      <!-- Block of parameters for highscale_medium runs (less full GPU mem on A100)-->
+      <parameter name="i" tag="highscale_medium">0</parameter>       
+      <parameter name="nodes" mode="python" type="int" tag="highscale_medium">      [  512,  768 ][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="highscale_medium">      [ 2048, 3072 ][$i]</parameter>      
+
+      <!-- the product of  $xtasks*$ytasks*$ztasks*$ttasks must= $tasks above -->
+      <parameter name="ttasks" mode="python" type="int" tag="highscale_medium">     [    8,   12 ][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="highscale_medium">     [   16,   16 ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="highscale_medium">     [   16,   16 ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="highscale_medium">     [    1,    1 ][$i]</parameter>
+
+      <!-- the number of the above dimensions where tasks != 1; only for reference in results table. -->
+      <parameter name="sliced_dims" mode="python" type="int" tag="highscale_medium">[    3,    3 ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="highscale_medium">   [    1,    1 ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="highscale_medium">   [    1,    1 ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="highscale_medium">    [    0,    1 ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates - DON'T MESS WITH THIS -->
+      <parameter name="update_idx" mode="python" type="int" tag="highscale_medium"> [    0,    0 ][$i]</parameter>
+      <!-- End highscale_medium block-->
+
+
+      <!-- Block of parameters for highscale_small runs (even less full GPU mem on A100)-->
+      <parameter name="i" tag="highscale_small">0</parameter>       
+      <parameter name="nodes" mode="python" type="int" tag="highscale_small">      [  512,  768  ][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="highscale_small">      [ 2048,  3072 ][$i]</parameter>      
+
+      <parameter name="ttasks" mode="python" type="int" tag="highscale_small">     [    4,    6  ][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="highscale_small">     [   16,   16  ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="highscale_small">     [   16,   16  ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="highscale_small">     [    2,    2  ][$i]</parameter>
+
+      <parameter name="sliced_dims" mode="python" type="int" tag="highscale_small">[    4,    4  ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="highscale_small">   [    1,    0  ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="highscale_small">   [    1,    1  ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="highscale_small">    [    0,    1  ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates - DON'T MESS WITH THIS -->
+      <parameter name="update_idx" mode="python" type="int" tag="highscale_small"> [    0,    0  ][$i]</parameter>
+      <!-- End highscale_small block-->
+
+
+
+
+      <!-- Blocks of parameters for exascale tests -->
+      <!-- Provided for convenience; not tested -->
+      <!-- exa_large; adjust these params to your needs, leaving lattice size as prescribed -->
+      <parameter name="i" tag="exa_large">0</parameter>       
+      <parameter name="nodes" mode="python" type="int" tag="exa_large">      [ 4096 ][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="exa_large">      [16384 ][$i]</parameter>      
+
+      <parameter name="ttasks" mode="python" type="int" tag="exa_large">     [   16  ][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="exa_large">     [   32 ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="exa_large">     [   16 ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="exa_large">     [    2  ][$i]</parameter>
+
+      <parameter name="sliced_dims" mode="python" type="int" tag="exa_large">[    4 ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="exa_large">   [    0 ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="exa_large">    [    0 ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates - DON'T MESS WITH THIS -->
+      <parameter name="update_idx" mode="python" type="int" tag="exa_large"> [    0 ][$i]</parameter>
+      <!-- End exa_large block-->
+
+
+      
+      <!-- exa_medium; adjust these params to your needs, leaving lattice size as prescribed -->
+      <parameter name="i" tag="exa_medium">0</parameter>       
+      <parameter name="nodes" mode="python" type="int" tag="exa_medium">      [ 4096  ][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="exa_medium">      [16384 ][$i]</parameter>      
+
+      <!-- the product of  $xtasks*$ytasks*$ztasks*$ttasks must= $tasks above -->
+      <parameter name="ttasks" mode="python" type="int" tag="exa_medium">     [   8 ][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="exa_medium">     [   32 ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="exa_medium">     [   32 ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="exa_medium">     [    2 ][$i]</parameter>
+
+      <!-- the number of the above dimensions where tasks != 1; only for reference in results table. -->
+      <parameter name="sliced_dims" mode="python" type="int" tag="exa_medium">[    4 ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="exa_medium">   [    0 ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="exa_medium">   [    1 ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="exa_medium">    [    0 ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates  - DON'T MESS WITH THIS-->
+      <parameter name="update_idx" mode="python" type="int" tag="exa_medium"> [    0 ][$i]</parameter>
+      <!-- End exa_medium block-->
+
+
+
+
+
+      
+
+      <!-- Block of parameters for exa_small runs (even less full GPU mem on A100)-->
+      <parameter name="i" tag="exa_small">0</parameter>       
+      <parameter name="nodes" mode="python" type="int" tag="exa_small">      [ 4096  ][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="exa_small">      [16384 ][$i]</parameter>      
+
+      <parameter name="ttasks" mode="python" type="int" tag="exa_small">     [    8 ][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="exa_small">     [   32 ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="exa_small">     [   32 ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="exa_small">     [    2 ][$i]</parameter>
+
+      <parameter name="sliced_dims" mode="python" type="int" tag="exa_small">[    4 ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="exa_small">   [    0 ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="exa_small">   [    1 ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="exa_small">    [    0 ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates - DON'T MESS WITH THIS -->
+      <parameter name="update_idx" mode="python" type="int" tag="exa_small"> [    0 ][$i]</parameter>
+      <!-- End exa_small block-->
+
+
+
+
+
+      
+      
+      <!-- End high-scale block-->
+      
+      <!-- Block for JSC internal weak scaling tests -->
+      <parameter name="i" tag="weakscale_full">0,1,2,3,4,5,6,7,8,9,10,11, 12</parameter>
+      <!--
+      <parameter name="i" tag="weakscale_full">2,3,4</parameter>       
+      -->
+      <parameter name="nodes" mode="python" type="int" tag="weakscale_full">      [  256,  256,  128, 128, 128,  64,  64,  32,  32, 16, 16,  8,  8][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="weakscale_full">      [ 1024, 1024,  512, 512, 512, 256, 256, 128, 128, 64, 64, 32, 32 ][$i]</parameter>      
+
+      <parameter name="ttasks" mode="python" type="int" tag="weakscale_full">     [    8,   32,   4,  16,   32,  16,  32,   8,  32, 32, 64, 32, 16][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="weakscale_full">     [   16,   32,  16,   8,   16,   8,   8,   8,   4,  2,  1,  1,  2 ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="weakscale_full">     [    8,    1,   8,   4,    1,   2,   1,   2,   1,  1,  1,  1,  1 ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="weakscale_full">     [    1,    1,   1,   1,    1,   1,   1,   1,   1,  1,  1,  1,  1 ][$i]</parameter>
+
+      <parameter name="sliced_dims" mode="python" type="int" tag="weakscale_full">[    3,    2,   3,   3,    2,   3,   2,   3,   2,  2,  1,  1,  1 ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="weakscale_full">   [    3,    3,   3,   3,    3,   3,   3,   3,   3,  3,  3,  3,  3  ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="weakscale_full">   [    0,    0,   0,   0,    0,   0,   0,   0,   0,  0,  0,  0,  0 ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="weakscale_full">    [    0,    0,   1,   2,    2,   3,   3,   4,   4,  5,  5,  6,  6 ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates -->
+      <!--
+      <parameter name="update_idx" mode="python" type="int" tag="weakscale_full"> [    2,    2,   2,   2,    2,   2,   2,   2,   2,  2,  2,  2,  2 ][$i]</parameter>
+      -->
+      <parameter name="update_idx" mode="python" type="int" tag="weakscale_full"> [    0,    0,   0,   0,    0,   0,   0,   0,   0,  0,  0,  0,  0 ][$i]</parameter>
+      <!-- End weak-scale block-->
+      
+
+      <!-- Block for JSC internal weak scaling MED tests -->
+      <parameter name="i" tag="weakscale_med">0,1,2,3,4,5,6,7,8,9,10,11</parameter>
+      <!--
+      <parameter name="i" tag="weakscale_med">2,3,4</parameter>       
+      -->
+      <parameter name="nodes" mode="python" type="int" tag="weakscale_med">      [  256,  256, 128,  128,  64,  64,  32,  32, 16, 16,  8,  8][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="weakscale_med">      [ 1024, 1024, 512,  512, 256, 256, 128, 128, 64, 64, 32, 32 ][$i]</parameter>      
+
+      <parameter name="ttasks" mode="python" type="int" tag="weakscale_med">     [    8,   4,   16,   32,  16,   8,   8,  32, 32, 16,  8, 16][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="weakscale_med">     [   16,   16,   8,   16,   8,   8,   8,   4,  2,  2,  2,  2 ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="weakscale_med">     [    8,    8,   4,    1,   2,   4,   2,   1,  1,  2,  2,  1 ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="weakscale_med">     [    1,    2,   1,    1,   1,   1,   1,   1,  1,  1,  1,  1 ][$i]</parameter>
+
+      <parameter name="sliced_dims" mode="python" type="int" tag="weakscale_med">[    3,    4,   3,    2,   3,   3,   3,   2,  2,  3,  3,  2 ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="weakscale_med">   [    3,    3,   3,    3,   2,   2,   2,   2,  3,  3,  3,  3  ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="weakscale_med">   [    0,    0,   0,    0,   0,   0,   0,   0,  0,  0,  0,  0 ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="weakscale_med">    [    0,    0,   2,    2,   3,   3,   4,   4,  5,  5,  6,  6 ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates -->
+      <!--
+      <parameter name="update_idx" mode="python" type="int" tag="weakscale_med"> [    2,    2,   2,    2,   2,   2,   2,   2,  2,  2,  2,  2 ][$i]</parameter>
+      -->
+      <parameter name="update_idx" mode="python" type="int" tag="weakscale_med"> [    0,    0,   0,    0,   0,   0,   0,   0,  0,  0,  0,  0 ][$i]</parameter>
+      <!-- End weak-scale block-->
+      
+      <!-- Block for JSC internal weak scaling SMALL tests -->
+      <parameter name="i" tag="weakscale_small">0,1,2,3,4,5,6,7,8,9,10,11</parameter>
+      <!--
+      <parameter name="i" tag="weakscale_small">2,3,4</parameter>       
+      -->
+      <parameter name="nodes" mode="python" type="int" tag="weakscale_small">      [  256,  256,  128, 128,  64,  64,  32,  32, 16, 16,  8,  8][$i]</parameter>
+      <parameter name="tasks" mode="python" type="int" tag="weakscale_small">      [ 1024, 1024,  512, 512, 256, 256, 128, 128, 64, 64, 32, 32 ][$i]</parameter>      
+
+      <parameter name="ttasks" mode="python" type="int" tag="weakscale_small">     [    8,   16,   16,   8,   4,   8,   8,  32,  4, 16,  8,  4][$i]</parameter>      
+      <parameter name="ztasks" mode="python" type="int" tag="weakscale_small">     [   16,    8,   8,   8,   8,   8,   8,   4,  4,  2,  2,  4 ][$i]</parameter>      
+      <parameter name="ytasks" mode="python" type="int" tag="weakscale_small">     [    8,    4,   4,    4,   8,   4,   2,   1,  4,  2,  2,  2 ][$i]</parameter>      
+      <parameter name="xtasks" mode="python" type="int" tag="weakscale_small">     [    1,    2,   1,    2,   1,   1,   1,   1,  1,  1,  1,  1 ][$i]</parameter>
+
+      <parameter name="sliced_dims" mode="python" type="int" tag="weakscale_small">[    3,    4,   3,    4,   3,   3,   3,   2,  3,  3,  3,  3 ][$i]</parameter>      
+ 
+      <!-- time_idx controls the wall-clock limit -->
+      <parameter name="time_idx" mode="python" type="int" tag="weakscale_small">   [    2,    2,   2,    2,   2,   2,   2,   2,  3,  3,  3,  3  ][$i]</parameter>
+      <!-- part_idx controls the slurm partition -->
+      <parameter name="part_idx" mode="python" type="int" tag="weakscale_small">   [    0,    0,   0,    0,   0,   0,   0,   0,  0,  0,  0,  0 ][$i]</parameter>
+      <!-- lat_idx controls the lattice dimensions - DON'T MESS WITH THIS -->
+      <parameter name="lat_idx" mode="python" type="int" tag="weakscale_small">    [    0,    0,   1,    1,   2,   2,   3,   3,  4,  4,  5,  5 ][$i]</parameter>
+      <!-- update_idx controls the number of HMC updates -->
+      <!--
+      <parameter name="update_idx" mode="python" type="int" tag="weakscale_small"> [    2,    2,   2,    2,   2,   2,   2,   2,  2,  2,  2,  2 ][$i]</parameter>
+      -->
+      <parameter name="update_idx" mode="python" type="int" tag="weakscale_small"> [    0,    0,   0,    0,   0,   0,   0,   0,  0,  0,  0,  0 ][$i]</parameter>
+      <!-- End weak-scale block-->
+      
+
+
+
+      
+      <parameter name="executable">${EXEC_DIR}/hmc</parameter>
+
+      <!-- some choices for wall-clock limits; adjust as necessary -->
+      <parameter name="timelimit" mode="python" >['00:30:00', '00:50:00','01:00:00', '01:30:00', '02:00:00'][$time_idx]</parameter>
+      <parameter name="errlogfile">stderr.%j</parameter>
+      <parameter name="outlogfile">stdout.%j</parameter>
+      <parameter name="account">jscbenchmark</parameter>
+      <parameter name="jobname">bench-hmc</parameter>
+
+      <!-- if $nodes > 384, then  must use the partition 'largebooster' on juwels -->
+      <parameter name="queue" mode="python"> ['booster', 'largebooster', 'develbooster', ][$part_idx]</parameter>
+
+
+
+      
+      <parameter name="threadspertask">24</parameter>
+      <parameter name="taskspernode">4</parameter>
+
+
+
+      <parameter name="gres">"gpu:4"</parameter>
+
+      
+      <parameter name="geom">$xtasks  $ytasks  $ztasks  $ttasks</parameter>
+      <parameter name="iogeom">1 1 1 1</parameter>
+
+      <parameter name="env" separator=";">${load_modules} ${exports}</parameter>
+     
+<!--      <parameter name="additional_job_config" >#SBATCH - -reservation=large_scale_benchmark</parameter>
+    -->  
+      
+      <parameter name="preprocess" separator="|">
+
+
+
+
+
+#Need to provide Chroma with an XML input file
+restart_input_file=${input_file}
+
+
+#Need to supply some names for output files
+xmloutput_file=${output_file}
+log_file=log.xml
+textoutput_file=out.txt
+
+
+
+#use a new XML output file for diagnostics
+export ARGS="${GPUDIRECT}  -ptxdb ${QDP_JIT_PATH}  -i $restart_input_file  -o $xmloutput_file  -l $log_file -geom ${geom} -iogeom ${iogeom} "
+
+#
+
+      </parameter>
+
+      <parameter name="postprocess">
+python compare_plaqs.py ${hmc_reference_file} ${output_file} ${valid_tolerance}  >> $textoutput_file
+python verify_weakscale.py ${xmloutput_file} $smass $cmass $rsd ${updates} ${nx} ${nt}  >> $textoutput_file
+
+      touch ${ready_file}
+      </parameter>
+
+      <parameter name="args_exec"> $ARGS   > $textoutput_file </parameter>
+
+      <parameter name="measurement">time -p</parameter>
+
+    </parameterset>
+    
+
+    
+
+    <!-- Job configuration -->
+    <parameterset name="executeset" init_with="platform.xml">
+      <parameter name="starter" separator="|">srun</parameter>
+
+      <parameter name="args_starter">${BINDING}</parameter>
+
+      <parameter name="input_file">input_hmc_TEMPLATE_LW_QUDA-rsd.xml</parameter>
+      <parameter name="output_file">hmc_${updates}traj_m${smass}m${cmass}_x${nx}t${nt}.xml</parameter>
+
+
+
+
+  
+      
+      <parameter name="fsteps" type="int">1</parameter>      
+      <parameter name="gsteps" type="int">1</parameter>      
+      <parameter name="ldsteps" type="int">1</parameter>      
+      <parameter name="ready_file">ready</parameter>
+
+      
+      <!-- DO NOT CHANGE TOLERANCE -->
+      <parameter name="valid_tolerance" >1e-10</parameter> <!-- default tolerance is higher -->
+      <parameter name="valid_tolerance" tag="highscale_large|highscale_medium|highscale_small">1e-08</parameter>
+      <!-- no result validity test for exascale tests -->
+      <parameter name="hmc_reference_file">hmc_ref_${updates}traj_m${smass}m${cmass}_x${nx}t${nt}.xml</parameter>
+    </parameterset>
+
+
+    
+
+    <!-- Patterns to extract data from output -->
+    <patternset name="pattern">
+      <pattern name="total_time" type="float">HMC: total time = ${jube_pat_fp} secs</pattern>
+
+      <!--
+      <pattern name="traj_time" type="float">HMC_TIME: Traj MD Time: ${jube_pat_fp}</pattern>
+      -->
+      <pattern name="iters" type="float">MULTI_CG_QUDA_CLOVER_SOLVER: ${jube_pat_int} iterations.</pattern>
+      <pattern name="traj_time" type="float">After HMC trajectory call: time= ${jube_pat_fp}</pattern>
+      <pattern name="traj_time_all" type="float" mode="python">${traj_time_sum}- ${traj_time_first}</pattern>
+      
+      <pattern name="validity" type="string">CHECKVALID: (${jube_pat_wrd})</pattern>      
+      <pattern name="paramcheck" type="string">INPUT VALIDATION: (${jube_pat_wrd})</pattern>      
+      <pattern name="max_diff" type="string">Max diff =\s+(${jube_pat_fp})</pattern>      
+    </patternset>
+    
+ 
+    <!-- Analyse -->
+    <analyser name="analyse">
+      <use>pattern</use> <!-- use existing patternset -->
+      <analyse step="submit">
+        <file>out.txt</file> <!-- file which should be scanned -->
+      </analyse>
+    </analyser>
+
+  <!-- Create result table -->
+    <result>
+      <use>analyse</use> <!-- use existing analyser -->
+      <table name="result" style="pretty" sort="nt,nx,nodes, jube_wp_id">
+	<column  title="ID" >jube_wp_id</column>
+	<column  title="Nt" >nt</column>
+        <column  title="Nx" >nx</column>	
+        <column  title="Nodes" >nodes</column>
+	<column  title="Tsk" >tasks</column>
+        <column  title="Cut dims" >sliced_dims</column>
+	<column  title="Tk_t" >ttasks</column>
+        <column  title="Tk_z" >ztasks</column>
+        <column  title="Tk_y" >ytasks</column>
+        <column  title="Tk_x" >xtasks</column>	
+        <column  title="Iters" format="d" >iters_avg</column>	
+        <column format=".1f" title="traj. time (s)">traj_time_all</column>
+	<column format=".1f" title="runtime (s)">total_time_last</column>
+        <column  title="Max rel. diff" format=".2g">max_diff</column>
+        <column  title="result P/F"  >validity</column>
+        <column  title="param P/F"  >paramcheck</column>
+      </table>
+      
+      <!-- CSV results table -->
+      <table name="hmc-result-csv" style="csv" sort="nodes">
+	<column  title="Nt" >nt</column>
+        <column  title="Nx" >nx</column>	
+        <column  title="Nodes" >nodes</column>
+        <column  title="Tsk" >tasks</column>
+        <column  title="Cut dims" >sliced_dims</column>
+	<column  title="Tk_t" >ttasks</column>
+        <column  title="Tk_z" >ztasks</column>
+        <column  title="Tk_y" >ytasks</column>
+        <column  title="Tk_x" >xtasks</column>
+	<column  title="Iters" format="d" >iters_avg</column>		
+        <column format=".1f" title="traj. time (s)">traj_time_all</column>
+	<column format=".1f" title="runtime (s)">total_time_last</column>
+        <column  title="Max rel. diff" format=".2g">max_diff</column>
+        <column  title="result P/F"  >validity</column>
+        <column  title="param P/F"  >paramcheck</column>
+      </table>
+    </result>
+
+
+    <!-- benchmark configuration -->
+ 
+
+    <parameterset name="lat_set"  tag="!highscale_large+!highscale_medium+!highscale_small+!exa_large+!exa_medium+!exa_small+!weakscale_full+!weakscale_med+!weakscale_small+!small_test">
+      <parameter name="nt" type="int" mode="python">[ 128][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[  64][$lat_idx]</parameter>
+    </parameterset>
+ 
+    <parameterset name="lat_set"  tag="small_test">
+      <parameter name="nt" type="int" mode="python">[ 128][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[  32][$lat_idx]</parameter>
+    </parameterset>
+   
+    <parameterset name="lat_set" tag="highscale">
+      <parameter name="nt" type="int" mode="python">[256, 128,  64, 384, 192,  96 ][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[256, 256, 256, 256, 256, 256 ][$lat_idx]</parameter>
+    </parameterset>
+    
+    <parameterset name="lat_set" tag="highscale_large">
+      <parameter name="nt" type="int" mode="python">[256, 384 ][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[256, 256 ][$lat_idx]</parameter>
+    </parameterset>
+
+    <parameterset name="lat_set" tag="highscale_medium">
+      <parameter name="nt" type="int" mode="python">[ 128, 192 ][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[ 256, 256 ][$lat_idx]</parameter>
+    </parameterset>
+
+    <parameterset name="lat_set" tag="highscale_small">
+      <parameter name="nt" type="int" mode="python">[  64,  96 ][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[ 256, 256 ][$lat_idx]</parameter>
+    </parameterset>
+
+    
+    <parameterset name="lat_set" tag="weakscale_full">
+      <parameter name="nt" type="int" mode="python">[ 128,  64, 512, 256, 128, 512, 256][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[ 256, 256, 128, 128, 128,  64,  64][$lat_idx]</parameter>
+    </parameterset>
+
+    <parameterset name="lat_set" tag="weakscale_med">
+      <parameter name="nt" type="int" mode="python">[ 64,  512, 256, 128, 512, 256, 128][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[ 256, 128, 128, 128, 64,   64,  64][$lat_idx]</parameter>
+    </parameterset>
+
+    <parameterset name="lat_set" tag="weakscale_small">
+      <parameter name="nt" type="int" mode="python">[ 256,      128,  64, 256, 128, 64][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[ 128,      128, 128,  64,  64, 64][$lat_idx]</parameter>
+    </parameterset>
+
+    <!-- Exascale lattices below -->
+    <parameterset name="lat_set" tag="exa_large">
+      <parameter name="nt" type="int" mode="python">[512 ][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[512 ][$lat_idx]</parameter>
+    </parameterset>
+
+    <parameterset name="lat_set" tag="exa_medium">
+      <parameter name="nt" type="int" mode="python">[256 ][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[512 ][$lat_idx]</parameter>
+    </parameterset>
+
+    <parameterset name="lat_set" tag="exa_small">
+      <parameter name="nt" type="int" mode="python">[128 ][$lat_idx]</parameter>
+      <parameter name="nx" type="int" mode="python">[512 ][$lat_idx]</parameter>
+    </parameterset>
+    <!-- End exascale lattices -->
+
+
+    <parameterset name="param_set">
+      <parameter name="save_prefix" type="string">dummy_cfg</parameter> <!-- should not ever save a cfg in these tests -->
+      <parameter name="beta_lw" type="float">6.0</parameter>
+      <!-- for default benchmark we give a smaller light mass, so the solver runs a bit longer -->
+      <parameter name="smass" type="float">-0.01</parameter> <!-- default smass is lighter -->
+      <parameter name="smass" type="float" tag="highscale_large|highscale_medium|highscale_small|exa_large|exa_medium|exa_small|weakscale_full|weakscale_med|weakscale_small">-0.01</parameter>
+
+      <parameter name="cmass" type="float">0.01</parameter>
+      <parameter name="rsd" type="float">1e-10</parameter>
+        <parameter name="rsd" type="float" tag="highscale_large|highscale_medium|highscale_small|exa_large|exa_medium|exa_small|weakscale_full|weakscale_med|weakscale_small">1e-06</parameter>
+
+      <parameter name="startnum" type="int">0</parameter>
+      <parameter name="warms" type="int">100</parameter>
+      <parameter name="updates" type="int" mode="python">[2, 3, 5][$update_idx]</parameter>
+    </parameterset>
+    
+
+    <!-- Load jobfile -->
+    <fileset name="files">
+      <copy>INPUT_TEMPLATES/${input_file}.in</copy>
+      <copy>BATCH_TEMPLATES/verify_weakscale.py</copy>
+      <copy>BATCH_TEMPLATES/compare_plaqs.py</copy>
+      <!-- We have no reference for an exascale benchmark; nothing to copy -->
+      <copy tag="!exa_large+!exa_medium+!exa_small+!small_test">REFERENCE_FILES/${hmc_reference_file}</copy>
+    </fileset>
+
+
+
+    <!-- Substitute inputfile -->
+    <substituteset name="sub_input"> 
+      <iofile in="${input_file}.in" out="$input_file" />
+      <sub source="#LLTT#" dest="$nt" />
+      <sub source="#LLXX#" dest="$nx" />
+      <sub source="#FSTEPS#" dest="$fsteps" />
+      <sub source="#GSTEPS#" dest="$gsteps" />
+      <sub source="#LDSTEPS#" dest="$ldsteps" />
+      <sub source="#BETA_LW#" dest="$beta_lw" />
+      <sub source="#STRANGEMASS#" dest="$smass" />
+      <sub source="#CHARMMASS#" dest="$cmass" />
+      <sub source="_RSD_" dest="$rsd" />
+      <sub source="#STARTNUM#" dest="$startnum" />
+      <sub source="#WARMUPS#" dest="$warms" />
+      <sub source="#UPDATESPERRUN#" dest="$updates" />
+      <sub source="#PREFIX#" dest="$save_prefix" />
+     </substituteset> 
+              
+    <!-- Operation -->
+    <step name="submit" >
+      <use>environment</use>
+      <use>executeset</use>   
+      <use>systemParameter</use>   
+      <use>files,sub_input</use>
+      <use from="platform.xml">jobfiles</use>
+      <use from="platform.xml">executesub</use>
+      <use>lat_set</use>
+      <use>param_set</use>
+      <do done_file="ready" >$submit $submit_script</do>
+      <!-- Do a dry run of exascale benchmark; set-up but do not submit; JUBE seems to submit anyway, but errors. No harm. -->
+      <do done_file="ready" tag="exa_large|exa_medium|exa_small">#</do>
+    </step>    
+  </benchmark>
+</jube>

@@ -1,0 +1,81 @@
+#!/bin/bash -x
+#SBATCH --job-name="lqcd_hmc_submit_0"
+#SBATCH --mail-user=
+#SBATCH --mail-type=NONE
+#SBATCH --nodes=8
+#SBATCH --ntasks=32
+#SBATCH --cpus-per-task=24
+#SBATCH --time=00:30:00
+#SBATCH --output=stdout.%j
+#SBATCH --error=stderr.%j
+#SBATCH --partition=booster
+#SBATCH --gres="gpu:4"
+#SBATCH --account=jscbenchmark
+
+
+export INSTALL_DIR="../../../../../../src/INSTALL/"
+module load Stages/2022
+module load GCC/11.2.0
+module load CUDA/11.5
+module load ParaStationMPI/5.5.0-1
+module load GMP/6.2.1
+module load Eigen/3.3.9
+module load Python/3.9.6
+module load SciPy-Stack/2021b # force a line break here
+	
+export EXEC_DIR=${INSTALL_DIR}/CHROMA/bin/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_DIR}/LLVM/lib/:${INSTALL_DIR}/CHROMA/lib:${INSTALL_DIR}/QUDA/lib/:${INSTALL_DIR}/QDP-JIT/lib/:${INSTALL_DIR}/QMP/lib/
+export QUDA_RESOURCE_PATH=./QRP/
+export QDP_JIT_PATH=${QUDA_RESOURCE_PATH}/qdp_ptxdb
+export OMP_NUM_THREADS=24
+export QUDA_ENABLE_GDR=1
+export QUDA_ENABLE_DEVICE_MEMORY_POOL=0
+export GPUDIRECT='-gpudirect'
+export CUDA_DEVICE_MAX_CONNECTIONS=1
+export BINDING=' --cpu-bind=none'
+mkdir -p $QUDA_RESOURCE_PATH
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+export SRUN_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK}
+
+#Need to provide Chroma with an XML input file
+restart_input_file=input_hmc_TEMPLATE_LW_QUDA-rsd.xml
+
+
+#Need to supply some names for output files
+xmloutput_file=hmc_5traj_m-0.01m0.01_x64t128.xml
+log_file=log.xml
+textoutput_file=out.txt
+
+
+
+#use a new XML output file for diagnostics
+export ARGS="${GPUDIRECT}  -ptxdb ${QDP_JIT_PATH}  -i $restart_input_file  -o $xmloutput_file  -l $log_file -geom 1  1  4  8 -iogeom 1 1 1 1 "
+
+#now we run again to get a timing without QUDA tuning
+
+JUBE_ERR_CODE=$?
+if [ $JUBE_ERR_CODE -ne 0 ]; then
+    touch error
+    exit $JUBE_ERR_CODE
+fi
+
+time -p srun ${BINDING} ${EXEC_DIR}/hmc $ARGS   > $textoutput_file
+
+JUBE_ERR_CODE=$?
+if [ $JUBE_ERR_CODE -ne 0 ]; then
+    touch error
+    exit $JUBE_ERR_CODE
+fi
+
+python compare_plaqs.py hmc_ref_5traj_m-0.01m0.01_x64t128.xml hmc_5traj_m-0.01m0.01_x64t128.xml 1e-10  >> $textoutput_file
+python verify_weakscale.py ${xmloutput_file} -0.01 0.01 1e-10 5 64 128  >> $textoutput_file
+
+      touch ready
+
+JUBE_ERR_CODE=$?
+if [ $JUBE_ERR_CODE -ne 0 ]; then
+    touch error
+    exit $JUBE_ERR_CODE
+fi
+
+touch ready

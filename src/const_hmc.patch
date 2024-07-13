@@ -1,0 +1,12 @@
+--- const_hmc.cc	2022-08-26 14:30:09.284862000 +0200
++++ const_hmc_new.cc	2022-08-26 14:31:29.366649232 +0200
+@@ -645,7 +645,8 @@
+       }   
+       
+       // Save state
+-      saveState<UpdateParams>(update_params, mc_control, cur_update, gauge_state.getQ());
++      // turn off IO for benchmark
++      //      saveState<UpdateParams>(update_params, mc_control, cur_update, gauge_state.getQ());
+       
+       pop(xml_log); // pop("MCUpdates")
+       pop(xml_out); // pop("MCUpdates")

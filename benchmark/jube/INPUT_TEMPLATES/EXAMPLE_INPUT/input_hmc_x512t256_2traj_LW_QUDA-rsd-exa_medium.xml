@@ -1,0 +1,478 @@
+<?xml version="1.0"?>
+
+<Params>
+  <MCControl>
+    <Cfg>
+      <cfg_type>WEAK_FIELD</cfg_type>
+      <cfg_file>DUMMY</cfg_file>
+      <parallel_io>true</parallel_io>
+    </Cfg>
+    <RNG>
+      <Seed>
+        <elem>3903</elem>
+        <elem>241</elem>
+        <elem>3476</elem>
+        <elem>74</elem>
+      </Seed>
+    </RNG>
+    <StartUpdateNum>0</StartUpdateNum>
+    <NWarmUpUpdates>100</NWarmUpUpdates>
+    <NProductionUpdates>10000</NProductionUpdates>
+    <NUpdatesThisRun>2</NUpdatesThisRun>
+    <SaveInterval>100</SaveInterval>
+    <SavePrefix>dummy_cfg</SavePrefix>
+    <SaveVolfmt>SINGLEFILE</SaveVolfmt>
+    <ParallelIO>false</ParallelIO>
+    <ReproCheckP>false</ReproCheckP>
+    <ReverseCheckP>false</ReverseCheckP>
+    <MonitorForces>true</MonitorForces>
+    
+    <InlineMeasurements>
+      <elem>
+	<Name>POLYAKOV_LOOP</Name>
+	<Frequency>1</Frequency>
+	<Param>
+	  <version>2</version>
+	</Param>
+	<NamedObject>
+	  <gauge_id>default_gauge_field</gauge_id>
+	</NamedObject>
+      </elem>
+      
+      <elem>
+	<Name>PLAQUETTE</Name>
+	<Frequency>1</Frequency>
+	<Param>
+	  <version>2</version>
+	  <annotation>
+	    <!-- One can optionally use a GAUGE_STATE -->
+	    <GaugeState>
+              <Name>SIMPLE_GAUGE_STATE</Name>
+              <GaugeBC>
+		<Name>PERIODIC_GAUGEBC</Name>
+              </GaugeBC>
+	    </GaugeState>
+	  </annotation>
+	</Param>
+	<NamedObject>
+	  <gauge_id>default_gauge_field</gauge_id>
+	</NamedObject>
+      </elem>
+    </InlineMeasurements>
+  </MCControl>
+  
+  
+  <HMCTrj>
+    <nrow>512 512 512 256</nrow>
+    
+    
+    <Monomials>
+      
+      <!-- Gauge monomial -->
+      <elem>
+	<!-- Tree level Symanzik improved gauge, here it is called
+             Luescher-Weiss. The beta is set to the value from the paper. -->
+	<Name>GAUGE_MONOMIAL</Name>
+	<GaugeAction>
+          <Name>LW_TREE_GAUGEACT</Name>
+          <!-- One has to keep in mind that a factor of 5/3 compared to other
+               conventions. Therefore this value of 5.5 corresponds to 3.3 from
+               the paper. -->
+          <beta>6.0</beta>
+          <u0>1.0</u0>
+          <GaugeBC>
+            <Name>PERIODIC_GAUGEBC</Name>
+          </GaugeBC>
+	</GaugeAction>
+	<NamedObject>
+          <monomial_id>gauge</monomial_id>
+	</NamedObject>
+      </elem><!--]]]-->
+      
+      <elem><!-- 3-flavor fermion ("strange") -->
+	<Name>ONE_FLAVOR_EOPREC_CONSTDET_FERM_RAT_MONOMIAL</Name>
+	<num_pf>3</num_pf>
+	<Action>
+          <FermionAction>
+            <FermAct>CLOVER</FermAct>
+            <Mass>-0.01</Mass>
+            <clovCoeff>1.00</clovCoeff>
+	    
+            <FermState>
+              <Name>STOUT_FERM_STATE</Name>
+              <rho>0.11</rho>
+              <n_smear>6</n_smear>
+              <orthog_dir>-1</orthog_dir>
+	      
+              <FermionBC>
+		<FermBC>SIMPLE_FERMBC</FermBC>
+		<boundary>1 1 1 -1</boundary>
+              </FermionBC>
+	      
+            </FermState>
+	    
+          </FermionAction>
+	  
+          <ActionApprox>
+	    
+ 
+
+
+	   <InvertParam>
+            <clovCoeff>1.00</clovCoeff>
+              <invType>MULTI_CG_QUDA_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>-0.01</Mass>
+                <clovCoeffR>1.0</clovCoeffR>
+                <clovCoeffT>1.0</clovCoeffT>
+		<clovCoeff>1.00</clovCoeff>
+              </CloverParams>
+
+
+	      <!-- BJOO: The overall target residuum and Delta for mixed prec -->
+           <RsdTarget>1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  </RsdTarget>
+
+           <Delta>1.0e-1</Delta>
+
+	      <!-- BJOO: Outer GCR is pipelined so set pipeline length -->
+              <Pipeline>0</Pipeline>
+              <!-- BJOO: Maximum outer GCR iterations -->
+	      <MaxIter>10000</MaxIter>
+
+	      <!-- BJOO: Fudge factor of difference between Chroma and QUDA 
+		   residual.
+		   BJOO: Residua between Chroma and QUDA may differ due to 
+		   preconditioning differences. If you use SEOhi_CLOVER rather 
+		   than CLOVER FermAct in Chroma the difference should go away
+		   but that code may be a wee bit untested -->
+              <RsdToleranceFactor>10</RsdToleranceFactor>
+
+	      <!-- BJOO: Whether you want antiperiodic BC-s in Time -->
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>CG</SolverType>
+              <Verbose>true</Verbose>
+              <CheckShifts>true</CheckShifts>
+	      <!-- BJOO: Preconditioning style: if your FermAct is CLOVER
+		   BJOO You *MUST* set this to true
+		   BJOO: If your FermAct is SEOhi_CLOVER you *MUST* set
+		   BJOO: it to false -->
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <!-- BJOO: Usual reconstruction and precision, axial gauge fix 
+		   options -->
+	      <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
+              <CudaRefinementPrecision>HALF</CudaRefinementPrecision>
+              <CudaRefinementReconstruct>RECONS_8</CudaRefinementReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+	      <!-- BJOO this should be deprecated -->
+              <AutotuneDslash>true</AutotuneDslash>
+            </InvertParam>
+
+
+
+
+
+
+
+
+
+            <RationalApprox>
+              <ratApproxType>REMEZ</ratApproxType>
+              <numPower>-1</numPower>
+              <denPower>4</denPower>
+              <lowerMin>1e-4</lowerMin>
+              <upperMax>100</upperMax>
+              <degree>14</degree>
+            </RationalApprox>
+          </ActionApprox>
+	  
+	  
+          <ForceApprox>
+	    
+            <RationalApprox>
+              <ratApproxType>REMEZ</ratApproxType>
+              <numPower>-1</numPower>
+              <denPower>2</denPower>
+              <lowerMin>1e-4</lowerMin>
+              <upperMax>100</upperMax>
+              <degree>8</degree>
+            </RationalApprox>
+
+
+	   <InvertParam>
+              <invType>MULTI_CG_QUDA_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>-0.01</Mass>
+                <clovCoeffR>1.0</clovCoeffR>
+                <clovCoeffT>1.0</clovCoeffT>
+		<clovCoeff>1.00</clovCoeff>
+              </CloverParams>
+
+	      <RsdTarget>1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 </RsdTarget> 
+
+              <Delta>1.0e-1</Delta>
+              <Pipeline>0</Pipeline>
+              <MaxIter>10000</MaxIter>
+              <RsdToleranceFactor>10</RsdToleranceFactor>
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>CG</SolverType>
+              <Verbose>true</Verbose>
+              <CheckShifts>true</CheckShifts>
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
+              <CudaRefinementPrecision>HALF</CudaRefinementPrecision>
+              <CudaRefinementReconstruct>RECONS_8</CudaRefinementReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+              <AutotuneDslash>true</AutotuneDslash>
+            </InvertParam>
+
+
+
+
+          </ForceApprox>
+	</Action>
+	
+	<NamedObject>
+          <monomial_id>constdet_strange_3flav</monomial_id>
+	</NamedObject>
+      </elem>
+
+      <!-- Even even part of 3-flavor ("strange") piece -->
+      <elem>
+        <Name>N_FLAVOR_LOGDET_EVEN_EVEN_FERM_MONOMIAL</Name>
+        <FermionAction>
+          <FermAct>CLOVER</FermAct>
+          <Mass>-0.01</Mass>
+          <clovCoeff>1.0</clovCoeff>
+          <AnisoParam>
+            <anisoP>false</anisoP>
+            <t_dir>3</t_dir>
+            <xi_0>1.0</xi_0>
+            <nu>1.0</nu>
+          </AnisoParam>
+	  
+          <FermState>
+            <Name>STOUT_FERM_STATE</Name>
+            <rho>0.11</rho>
+            <n_smear>6</n_smear>
+            <orthog_dir>-1</orthog_dir>
+            <FermionBC>
+              <FermBC>SIMPLE_FERMBC</FermBC>
+              <boundary>1 1 1 -1</boundary>
+            </FermionBC>
+          </FermState>
+
+        </FermionAction>
+        <num_flavors>3</num_flavors>
+        <NamedObject>
+          <monomial_id>HMC::logdet_3flav</monomial_id>
+        </NamedObject>
+      </elem>
+
+
+      <elem><!-- charm_fermion -->
+	<Name>ONE_FLAVOR_EOPREC_CONSTDET_FERM_RAT_MONOMIAL</Name>
+	<num_pf>1</num_pf>
+	<Action>
+          <FermionAction>
+            <FermAct>CLOVER</FermAct>
+            <Mass>0.01</Mass>
+            <clovCoeff>1.00</clovCoeff>
+	    
+            <FermState>
+              <Name>STOUT_FERM_STATE</Name>
+              <rho>0.11</rho>
+              <n_smear>6</n_smear>
+              <orthog_dir>-1</orthog_dir>
+	      
+              <FermionBC>
+		<FermBC>SIMPLE_FERMBC</FermBC>
+		<boundary>1 1 1 -1</boundary>
+              </FermionBC>
+	      
+            </FermState>
+	    
+          </FermionAction>
+	  
+          <ActionApprox>
+	    
+	   <InvertParam>
+              <invType>MULTI_CG_QUDA_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>0.01</Mass>
+                <clovCoeffR>1.0</clovCoeffR>
+                <clovCoeffT>1.0</clovCoeffT>
+		<clovCoeff>1.00</clovCoeff>
+
+              </CloverParams>
+
+              <RsdTarget>1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  </RsdTarget>
+
+              <Delta>1.0e-1</Delta>
+              <Pipeline>0</Pipeline>
+              <MaxIter>10000</MaxIter>
+              <RsdToleranceFactor>10</RsdToleranceFactor>
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>CG</SolverType>
+              <Verbose>true</Verbose>
+              <CheckShifts>true</CheckShifts>
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
+              <CudaRefinementPrecision>HALF</CudaRefinementPrecision>
+              <CudaRefinementReconstruct>RECONS_8</CudaRefinementReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+              <AutotuneDslash>true</AutotuneDslash>
+            </InvertParam>
+
+
+
+
+            <RationalApprox>
+              <ratApproxType>REMEZ</ratApproxType>
+              <numPower>-1</numPower>
+              <denPower>4</denPower>
+              <lowerMin>1e-4</lowerMin>
+              <upperMax>100</upperMax>
+              <degree>14</degree>
+            </RationalApprox>
+          </ActionApprox>
+	  
+	  
+          <ForceApprox>
+	    
+            <RationalApprox>
+              <ratApproxType>REMEZ</ratApproxType>
+              <numPower>-1</numPower>
+              <denPower>2</denPower>
+              <lowerMin>1e-4</lowerMin>
+              <upperMax>100</upperMax>
+              <degree>8</degree>
+            </RationalApprox>
+	    
+
+
+	   <InvertParam>
+              <invType>MULTI_CG_QUDA_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>0.01</Mass>
+                <clovCoeffR>1.0</clovCoeffR>
+                <clovCoeffT>1.0</clovCoeffT>
+		<clovCoeff>1.00</clovCoeff>
+
+              </CloverParams>
+
+	      <RsdTarget>1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 </RsdTarget> 
+
+              <Delta>1.0e-1</Delta>
+              <Pipeline>0</Pipeline>
+              <MaxIter>10000</MaxIter>
+              <RsdToleranceFactor>10</RsdToleranceFactor>
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>CG</SolverType>
+              <Verbose>true</Verbose>
+              <CheckShifts>true</CheckShifts>
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
+              <CudaRefinementPrecision>HALF</CudaRefinementPrecision>
+              <CudaRefinementReconstruct>RECONS_8</CudaRefinementReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+              <AutotuneDslash>true</AutotuneDslash>
+            </InvertParam>
+
+
+          </ForceApprox>
+	</Action>
+	
+	<NamedObject>
+          <monomial_id>constdet_charm_1flav</monomial_id>
+	</NamedObject>
+      </elem>
+    
+
+      <!-- Even even part of 1-flavor ("charm")  -->
+      <elem>
+        <Name>N_FLAVOR_LOGDET_EVEN_EVEN_FERM_MONOMIAL</Name>
+        <FermionAction>
+          <FermAct>CLOVER</FermAct>
+          <Mass>0.01</Mass>
+          <clovCoeff>1.0</clovCoeff>
+          <AnisoParam>
+            <anisoP>false</anisoP>
+            <t_dir>3</t_dir>
+            <xi_0>1</xi_0>
+            <nu>1</nu>
+          </AnisoParam>
+          <FermState>
+              <Name>STOUT_FERM_STATE</Name>
+              <rho>0.11</rho>
+              <n_smear>6</n_smear>
+              <orthog_dir>-1</orthog_dir>
+             
+              <FermionBC>
+                <FermBC>SIMPLE_FERMBC</FermBC>
+                <boundary>1 1 1 -1</boundary>
+              </FermionBC>
+          </FermState>        
+        </FermionAction>
+        <num_flavors>1</num_flavors>
+        <NamedObject>
+          <monomial_id>HMC::logdet_1flav</monomial_id>
+        </NamedObject>
+      </elem>
+    </Monomials>
+
+    <Hamiltonian>
+      <monomial_ids>
+	<elem>constdet_strange_3flav</elem>
+	<elem>HMC::logdet_3flav</elem>
+	<elem>constdet_charm_1flav</elem>
+ 	<elem>HMC::logdet_1flav</elem>
+	<elem>gauge</elem>
+     </monomial_ids>
+    </Hamiltonian>
+
+
+    <MDIntegrator>    
+      <!-- Total MD time covered during one trajectory. -->
+      <tau0>1.0</tau0>      
+      <!-- The integrators can be nested to provide multiple time scales. -->
+      <Integrator>
+	<Name>LCM_STS_MIN_NORM_2</Name>
+	<n_steps>1</n_steps>
+	<monomial_ids>
+          <elem>constdet_strange_3flav</elem>
+          <elem>constdet_charm_1flav</elem>
+	</monomial_ids>
+
+	<SubIntegrator>
+          <Name>LCM_STS_MIN_NORM_2</Name>
+          <n_steps>1</n_steps>
+          <monomial_ids>
+	    <elem>HMC::logdet_3flav</elem>
+ 	    <elem>HMC::logdet_1flav</elem>
+	  </monomial_ids>
+	  
+	  <SubIntegrator>
+            <Name>LCM_STS_MIN_NORM_2</Name>
+            <n_steps>1</n_steps>
+            <monomial_ids>
+              <elem>gauge</elem>
+            </monomial_ids>
+
+	  </SubIntegrator>
+
+	</SubIntegrator>	
+
+      </Integrator>
+
+    </MDIntegrator>
+
+</HMCTrj>
+</Params>

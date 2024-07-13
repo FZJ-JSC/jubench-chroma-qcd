@@ -1,0 +1,664 @@
+<?xml version="1.0"?>
+
+
+<hmc>
+  <Input><Params>
+  <MCControl>
+    <Cfg>
+      <cfg_type>WEAK_FIELD</cfg_type>
+      <cfg_file>DUMMY</cfg_file>
+      <parallel_io>true</parallel_io>
+    </Cfg>
+    <RNG>
+      <Seed>
+        <elem>3903</elem>
+        <elem>241</elem>
+        <elem>3476</elem>
+        <elem>74</elem>
+      </Seed>
+    </RNG>
+    <StartUpdateNum>0</StartUpdateNum>
+    <NWarmUpUpdates>100</NWarmUpUpdates>
+    <NProductionUpdates>10000</NProductionUpdates>
+    <NUpdatesThisRun>2</NUpdatesThisRun>
+    <SaveInterval>100</SaveInterval>
+    <SavePrefix>dummy_cfg</SavePrefix>
+    <SaveVolfmt>SINGLEFILE</SaveVolfmt>
+    <ParallelIO>false</ParallelIO>
+    <ReproCheckP>false</ReproCheckP>
+    <ReverseCheckP>false</ReverseCheckP>
+    <MonitorForces>true</MonitorForces>
+    
+    <InlineMeasurements>
+      <elem>
+	<Name>POLYAKOV_LOOP</Name>
+	<Frequency>1</Frequency>
+	<Param>
+	  <version>2</version>
+	</Param>
+	<NamedObject>
+	  <gauge_id>default_gauge_field</gauge_id>
+	</NamedObject>
+      </elem>
+      
+      <elem>
+	<Name>PLAQUETTE</Name>
+	<Frequency>1</Frequency>
+	<Param>
+	  <version>2</version>
+	  <annotation>
+	    <!-- One can optionally use a GAUGE_STATE -->
+	    <GaugeState>
+              <Name>SIMPLE_GAUGE_STATE</Name>
+              <GaugeBC>
+		<Name>PERIODIC_GAUGEBC</Name>
+              </GaugeBC>
+	    </GaugeState>
+	  </annotation>
+	</Param>
+	<NamedObject>
+	  <gauge_id>default_gauge_field</gauge_id>
+	</NamedObject>
+      </elem>
+    </InlineMeasurements>
+  </MCControl>
+  
+  
+  <HMCTrj>
+    <nrow>256 256 256 256</nrow>
+    
+    
+    <Monomials>
+      
+      <!-- Gauge monomial -->
+      <elem>
+	<!-- Tree level Symanzik improved gauge, here it is called
+             Luescher-Weiss. The beta is set to the value from the paper. -->
+	<Name>GAUGE_MONOMIAL</Name>
+	<GaugeAction>
+          <Name>LW_TREE_GAUGEACT</Name>
+          <!-- One has to keep in mind that a factor of 5/3 compared to other
+               conventions. Therefore this value of 5.5 corresponds to 3.3 from
+               the paper. -->
+          <beta>6.0</beta>
+          <u0>1.0</u0>
+          <GaugeBC>
+            <Name>PERIODIC_GAUGEBC</Name>
+          </GaugeBC>
+	</GaugeAction>
+	<NamedObject>
+          <monomial_id>gauge</monomial_id>
+	</NamedObject>
+      </elem><!--]]]-->
+      
+      <elem><!-- 3-flavor fermion ("strange") -->
+	<Name>ONE_FLAVOR_EOPREC_CONSTDET_FERM_RAT_MONOMIAL</Name>
+	<num_pf>3</num_pf>
+	<Action>
+          <FermionAction>
+            <FermAct>CLOVER</FermAct>
+            <Mass>-0.01</Mass>
+            <clovCoeff>1.00</clovCoeff>
+	    
+            <FermState>
+              <Name>STOUT_FERM_STATE</Name>
+              <rho>0.11</rho>
+              <n_smear>6</n_smear>
+              <orthog_dir>-1</orthog_dir>
+	      
+              <FermionBC>
+		<FermBC>SIMPLE_FERMBC</FermBC>
+		<boundary>1 1 1 -1</boundary>
+              </FermionBC>
+	      
+            </FermState>
+	    
+          </FermionAction>
+	  
+          <ActionApprox>
+	    
+ 
+
+
+	   <InvertParam>
+            <clovCoeff>1.00</clovCoeff>
+              <invType>MULTI_CG_QUDA_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>-0.01</Mass>
+                <clovCoeffR>1.0</clovCoeffR>
+                <clovCoeffT>1.0</clovCoeffT>
+		<clovCoeff>1.00</clovCoeff>
+              </CloverParams>
+
+
+	      <!-- BJOO: The overall target residuum and Delta for mixed prec -->
+           <RsdTarget>1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  </RsdTarget>
+
+           <Delta>1.0e-1</Delta>
+
+	      <!-- BJOO: Outer GCR is pipelined so set pipeline length -->
+              <Pipeline>0</Pipeline>
+              <!-- BJOO: Maximum outer GCR iterations -->
+	      <MaxIter>10000</MaxIter>
+
+	      <!-- BJOO: Fudge factor of difference between Chroma and QUDA 
+		   residual.
+		   BJOO: Residua between Chroma and QUDA may differ due to 
+		   preconditioning differences. If you use SEOhi_CLOVER rather 
+		   than CLOVER FermAct in Chroma the difference should go away
+		   but that code may be a wee bit untested -->
+              <RsdToleranceFactor>10</RsdToleranceFactor>
+
+	      <!-- BJOO: Whether you want antiperiodic BC-s in Time -->
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>CG</SolverType>
+              <Verbose>true</Verbose>
+              <CheckShifts>true</CheckShifts>
+	      <!-- BJOO: Preconditioning style: if your FermAct is CLOVER
+		   BJOO You *MUST* set this to true
+		   BJOO: If your FermAct is SEOhi_CLOVER you *MUST* set
+		   BJOO: it to false -->
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <!-- BJOO: Usual reconstruction and precision, axial gauge fix 
+		   options -->
+	      <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
+              <CudaRefinementPrecision>HALF</CudaRefinementPrecision>
+              <CudaRefinementReconstruct>RECONS_8</CudaRefinementReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+	      <!-- BJOO this should be deprecated -->
+              <AutotuneDslash>true</AutotuneDslash>
+            </InvertParam>
+
+
+
+
+
+
+
+
+
+            <RationalApprox>
+              <ratApproxType>REMEZ</ratApproxType>
+              <numPower>-1</numPower>
+              <denPower>4</denPower>
+              <lowerMin>1e-4</lowerMin>
+              <upperMax>100</upperMax>
+              <degree>14</degree>
+            </RationalApprox>
+          </ActionApprox>
+	  
+	  
+          <ForceApprox>
+	    
+            <RationalApprox>
+              <ratApproxType>REMEZ</ratApproxType>
+              <numPower>-1</numPower>
+              <denPower>2</denPower>
+              <lowerMin>1e-4</lowerMin>
+              <upperMax>100</upperMax>
+              <degree>8</degree>
+            </RationalApprox>
+
+
+	   <InvertParam>
+              <invType>MULTI_CG_QUDA_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>-0.01</Mass>
+                <clovCoeffR>1.0</clovCoeffR>
+                <clovCoeffT>1.0</clovCoeffT>
+		<clovCoeff>1.00</clovCoeff>
+              </CloverParams>
+
+	      <RsdTarget>1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 </RsdTarget> 
+
+              <Delta>1.0e-1</Delta>
+              <Pipeline>0</Pipeline>
+              <MaxIter>10000</MaxIter>
+              <RsdToleranceFactor>10</RsdToleranceFactor>
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>CG</SolverType>
+              <Verbose>true</Verbose>
+              <CheckShifts>true</CheckShifts>
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
+              <CudaRefinementPrecision>HALF</CudaRefinementPrecision>
+              <CudaRefinementReconstruct>RECONS_8</CudaRefinementReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+              <AutotuneDslash>true</AutotuneDslash>
+            </InvertParam>
+
+
+
+
+          </ForceApprox>
+	</Action>
+	
+	<NamedObject>
+          <monomial_id>constdet_strange_3flav</monomial_id>
+	</NamedObject>
+      </elem>
+
+      <!-- Even even part of 3-flavor ("strange") piece -->
+      <elem>
+        <Name>N_FLAVOR_LOGDET_EVEN_EVEN_FERM_MONOMIAL</Name>
+        <FermionAction>
+          <FermAct>CLOVER</FermAct>
+          <Mass>-0.01</Mass>
+          <clovCoeff>1.0</clovCoeff>
+          <AnisoParam>
+            <anisoP>false</anisoP>
+            <t_dir>3</t_dir>
+            <xi_0>1.0</xi_0>
+            <nu>1.0</nu>
+          </AnisoParam>
+	  
+          <FermState>
+            <Name>STOUT_FERM_STATE</Name>
+            <rho>0.11</rho>
+            <n_smear>6</n_smear>
+            <orthog_dir>-1</orthog_dir>
+            <FermionBC>
+              <FermBC>SIMPLE_FERMBC</FermBC>
+              <boundary>1 1 1 -1</boundary>
+            </FermionBC>
+          </FermState>
+
+        </FermionAction>
+        <num_flavors>3</num_flavors>
+        <NamedObject>
+          <monomial_id>HMC::logdet_3flav</monomial_id>
+        </NamedObject>
+      </elem>
+
+
+      <elem><!-- charm_fermion -->
+	<Name>ONE_FLAVOR_EOPREC_CONSTDET_FERM_RAT_MONOMIAL</Name>
+	<num_pf>1</num_pf>
+	<Action>
+          <FermionAction>
+            <FermAct>CLOVER</FermAct>
+            <Mass>0.01</Mass>
+            <clovCoeff>1.00</clovCoeff>
+	    
+            <FermState>
+              <Name>STOUT_FERM_STATE</Name>
+              <rho>0.11</rho>
+              <n_smear>6</n_smear>
+              <orthog_dir>-1</orthog_dir>
+	      
+              <FermionBC>
+		<FermBC>SIMPLE_FERMBC</FermBC>
+		<boundary>1 1 1 -1</boundary>
+              </FermionBC>
+	      
+            </FermState>
+	    
+          </FermionAction>
+	  
+          <ActionApprox>
+	    
+	   <InvertParam>
+              <invType>MULTI_CG_QUDA_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>0.01</Mass>
+                <clovCoeffR>1.0</clovCoeffR>
+                <clovCoeffT>1.0</clovCoeffT>
+		<clovCoeff>1.00</clovCoeff>
+
+              </CloverParams>
+
+              <RsdTarget>1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  1e-10  </RsdTarget>
+
+              <Delta>1.0e-1</Delta>
+              <Pipeline>0</Pipeline>
+              <MaxIter>10000</MaxIter>
+              <RsdToleranceFactor>10</RsdToleranceFactor>
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>CG</SolverType>
+              <Verbose>true</Verbose>
+              <CheckShifts>true</CheckShifts>
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
+              <CudaRefinementPrecision>HALF</CudaRefinementPrecision>
+              <CudaRefinementReconstruct>RECONS_8</CudaRefinementReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+              <AutotuneDslash>true</AutotuneDslash>
+            </InvertParam>
+
+
+
+
+            <RationalApprox>
+              <ratApproxType>REMEZ</ratApproxType>
+              <numPower>-1</numPower>
+              <denPower>4</denPower>
+              <lowerMin>1e-4</lowerMin>
+              <upperMax>100</upperMax>
+              <degree>14</degree>
+            </RationalApprox>
+          </ActionApprox>
+	  
+	  
+          <ForceApprox>
+	    
+            <RationalApprox>
+              <ratApproxType>REMEZ</ratApproxType>
+              <numPower>-1</numPower>
+              <denPower>2</denPower>
+              <lowerMin>1e-4</lowerMin>
+              <upperMax>100</upperMax>
+              <degree>8</degree>
+            </RationalApprox>
+	    
+
+
+	   <InvertParam>
+              <invType>MULTI_CG_QUDA_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>0.01</Mass>
+                <clovCoeffR>1.0</clovCoeffR>
+                <clovCoeffT>1.0</clovCoeffT>
+		<clovCoeff>1.00</clovCoeff>
+
+              </CloverParams>
+
+	      <RsdTarget>1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 1e-10 </RsdTarget> 
+
+              <Delta>1.0e-1</Delta>
+              <Pipeline>0</Pipeline>
+              <MaxIter>10000</MaxIter>
+              <RsdToleranceFactor>10</RsdToleranceFactor>
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>CG</SolverType>
+              <Verbose>true</Verbose>
+              <CheckShifts>true</CheckShifts>
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
+              <CudaRefinementPrecision>HALF</CudaRefinementPrecision>
+              <CudaRefinementReconstruct>RECONS_8</CudaRefinementReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+              <AutotuneDslash>true</AutotuneDslash>
+            </InvertParam>
+
+
+          </ForceApprox>
+	</Action>
+	
+	<NamedObject>
+          <monomial_id>constdet_charm_1flav</monomial_id>
+	</NamedObject>
+      </elem>
+    
+
+      <!-- Even even part of 1-flavor ("charm")  -->
+      <elem>
+        <Name>N_FLAVOR_LOGDET_EVEN_EVEN_FERM_MONOMIAL</Name>
+        <FermionAction>
+          <FermAct>CLOVER</FermAct>
+          <Mass>0.01</Mass>
+          <clovCoeff>1.0</clovCoeff>
+          <AnisoParam>
+            <anisoP>false</anisoP>
+            <t_dir>3</t_dir>
+            <xi_0>1</xi_0>
+            <nu>1</nu>
+          </AnisoParam>
+          <FermState>
+              <Name>STOUT_FERM_STATE</Name>
+              <rho>0.11</rho>
+              <n_smear>6</n_smear>
+              <orthog_dir>-1</orthog_dir>
+             
+              <FermionBC>
+                <FermBC>SIMPLE_FERMBC</FermBC>
+                <boundary>1 1 1 -1</boundary>
+              </FermionBC>
+          </FermState>        
+        </FermionAction>
+        <num_flavors>1</num_flavors>
+        <NamedObject>
+          <monomial_id>HMC::logdet_1flav</monomial_id>
+        </NamedObject>
+      </elem>
+    </Monomials>
+
+    <Hamiltonian>
+      <monomial_ids>
+	<elem>constdet_strange_3flav</elem>
+	<elem>HMC::logdet_3flav</elem>
+	<elem>constdet_charm_1flav</elem>
+ 	<elem>HMC::logdet_1flav</elem>
+	<elem>gauge</elem>
+     </monomial_ids>
+    </Hamiltonian>
+
+
+    <MDIntegrator>    
+      <!-- Total MD time covered during one trajectory. -->
+      <tau0>1.0</tau0>      
+      <!-- The integrators can be nested to provide multiple time scales. -->
+      <Integrator>
+	<Name>LCM_STS_MIN_NORM_2</Name>
+	<n_steps>1</n_steps>
+	<monomial_ids>
+          <elem>constdet_strange_3flav</elem>
+          <elem>constdet_charm_1flav</elem>
+	</monomial_ids>
+
+	<SubIntegrator>
+          <Name>LCM_STS_MIN_NORM_2</Name>
+          <n_steps>1</n_steps>
+          <monomial_ids>
+	    <elem>HMC::logdet_3flav</elem>
+ 	    <elem>HMC::logdet_1flav</elem>
+	  </monomial_ids>
+	  
+	  <SubIntegrator>
+            <Name>LCM_STS_MIN_NORM_2</Name>
+            <n_steps>1</n_steps>
+            <monomial_ids>
+              <elem>gauge</elem>
+            </monomial_ids>
+
+	  </SubIntegrator>
+
+	</SubIntegrator>	
+
+      </Integrator>
+
+    </MDIntegrator>
+
+</HMCTrj>
+</Params>
+
+  </Input>
+  <ProgramInfo>
+    <code_version>
+      <chroma>3.44.1</chroma>
+      <qdp>0.1</qdp>
+      <basePrecision>64</basePrecision>
+    </code_version>
+    <run_date>17 May 23 02:01:50 CEST</run_date>
+    <Setgeom>
+      <latt_size>256 256 256 256</latt_size>
+      <logical_size>1 8 16 16</logical_size>
+      <subgrid_size>256 32 16 16</subgrid_size>
+      <total_volume>4294967296</total_volume>
+      <subgrid_volume>2097152</subgrid_volume>
+    </Setgeom>
+  </ProgramInfo>
+  <Config_info><weak_field>
+</weak_field>
+
+  </Config_info>
+  <doHMC>
+    <MCUpdates>
+      <elem>
+        <Update>
+          <update_no>1</update_no>
+          <WarmUpP>true</WarmUpP>
+          <HMCTrajectory>
+            <WarmUpP>true</WarmUpP>
+            <H_old>
+              <KE_old>218676.117099742</KE_old>
+              <PE_old>-281236078995.74</PE_old>
+            </H_old>
+            <H_new>
+              <KE_new>-28573034568.2827</KE_new>
+              <PE_new>-252605428433.849</PE_new>
+            </H_new>
+            <deltaKE>-28573253244.3998</deltaKE>
+            <deltaPE>28630650561.891</deltaPE>
+            <deltaH>57397317.4911995</deltaH>
+            <AccProb>0</AccProb>
+            <AcceptP>true</AcceptP>
+          </HMCTrajectory>
+          <seconds_for_trajectory>1798.287326</seconds_for_trajectory>
+          <InlineObservables>
+            <elem>
+              <Plaquette>
+                <update_no>1</update_no>
+                <w_plaq>0.765487721358268</w_plaq>
+                <s_plaq>0.765494176662236</s_plaq>
+                <t_plaq>0.765481266054301</t_plaq>
+                <plane_01_plaq>0.765493580206559</plane_01_plaq>
+                <plane_02_plaq>0.765496867688114</plane_02_plaq>
+                <plane_12_plaq>0.765492082092033</plane_12_plaq>
+                <plane_03_plaq>0.765484449954269</plane_03_plaq>
+                <plane_13_plaq>0.765481174128781</plane_13_plaq>
+                <plane_23_plaq>0.765478174079852</plane_23_plaq>
+                <link>0.28679578646541</link>
+              </Plaquette>
+            </elem>
+            <elem>
+              <PolyakovLoop>
+                <update_no>1</update_no>
+                <poly_loop>
+                  <elem>
+                    <re>1.98663199840877e-05</re>
+                    <im>7.37923137499529e-06</im>
+                  </elem>
+                  <elem>
+                    <re>5.46389137028468e-06</re>
+                    <im>-3.54019497441522e-06</im>
+                  </elem>
+                  <elem>
+                    <re>-6.3395080600427e-05</re>
+                    <im>1.12715661316516e-05</im>
+                  </elem>
+                  <elem>
+                    <re>0.00011627479518218</re>
+                    <im>-2.01429700951372e-05</im>
+                  </elem>
+                </poly_loop>
+              </PolyakovLoop>
+            </elem>
+            <elem>
+              <Plaquette>
+                <update_no>1</update_no>
+                <w_plaq>0.765487721358268</w_plaq>
+                <s_plaq>0.765494176662236</s_plaq>
+                <t_plaq>0.765481266054301</t_plaq>
+                <plane_01_plaq>0.765493580206559</plane_01_plaq>
+                <plane_02_plaq>0.765496867688114</plane_02_plaq>
+                <plane_12_plaq>0.765492082092033</plane_12_plaq>
+                <plane_03_plaq>0.765484449954269</plane_03_plaq>
+                <plane_13_plaq>0.765481174128781</plane_13_plaq>
+                <plane_23_plaq>0.765478174079852</plane_23_plaq>
+                <link>0.28679578646541</link>
+              </Plaquette>
+            </elem>
+          </InlineObservables>
+          <seconds_for_measurements>2.520985</seconds_for_measurements>
+        </Update>
+      </elem>
+      <elem>
+        <Update>
+          <update_no>2</update_no>
+          <WarmUpP>true</WarmUpP>
+          <HMCTrajectory>
+            <WarmUpP>true</WarmUpP>
+            <H_old>
+              <KE_old>240610.465414794</KE_old>
+              <PE_old>-252638498713.721</PE_old>
+            </H_old>
+            <H_new>
+              <KE_new>-13673485690.9618</KE_new>
+              <PE_new>-238943917813.526</PE_new>
+            </H_new>
+            <deltaKE>-13673726301.4272</deltaKE>
+            <deltaPE>13694580900.1953</deltaPE>
+            <deltaH>20854598.7680664</deltaH>
+            <AccProb>0</AccProb>
+            <AcceptP>true</AcceptP>
+          </HMCTrajectory>
+          <seconds_for_trajectory>1534.627839</seconds_for_trajectory>
+          <InlineObservables>
+            <elem>
+              <Plaquette>
+                <update_no>2</update_no>
+                <w_plaq>0.664852908088319</w_plaq>
+                <s_plaq>0.664857285878967</s_plaq>
+                <t_plaq>0.66484853029767</t_plaq>
+                <plane_01_plaq>0.664861385311446</plane_01_plaq>
+                <plane_02_plaq>0.664851847197956</plane_02_plaq>
+                <plane_12_plaq>0.664858625127499</plane_12_plaq>
+                <plane_03_plaq>0.664847588625527</plane_03_plaq>
+                <plane_13_plaq>0.664857791391892</plane_13_plaq>
+                <plane_23_plaq>0.664840210875591</plane_23_plaq>
+                <link>0.230610298765307</link>
+              </Plaquette>
+            </elem>
+            <elem>
+              <PolyakovLoop>
+                <update_no>2</update_no>
+                <poly_loop>
+                  <elem>
+                    <re>-2.09119492197998e-05</re>
+                    <im>-2.6311844681388e-05</im>
+                  </elem>
+                  <elem>
+                    <re>-3.67755265305129e-05</re>
+                    <im>7.85342643842294e-05</im>
+                  </elem>
+                  <elem>
+                    <re>-2.57242198820647e-05</re>
+                    <im>-6.17968851795181e-06</im>
+                  </elem>
+                  <elem>
+                    <re>2.69872706546526e-05</re>
+                    <im>-3.38138870290508e-05</im>
+                  </elem>
+                </poly_loop>
+              </PolyakovLoop>
+            </elem>
+            <elem>
+              <Plaquette>
+                <update_no>2</update_no>
+                <w_plaq>0.664852908088319</w_plaq>
+                <s_plaq>0.664857285878967</s_plaq>
+                <t_plaq>0.66484853029767</t_plaq>
+                <plane_01_plaq>0.664861385311446</plane_01_plaq>
+                <plane_02_plaq>0.664851847197956</plane_02_plaq>
+                <plane_12_plaq>0.664858625127499</plane_12_plaq>
+                <plane_03_plaq>0.664847588625527</plane_03_plaq>
+                <plane_13_plaq>0.664857791391892</plane_13_plaq>
+                <plane_23_plaq>0.664840210875591</plane_23_plaq>
+                <link>0.230610298765307</link>
+              </Plaquette>
+            </elem>
+          </InlineObservables>
+          <seconds_for_measurements>2.355234</seconds_for_measurements>
+        </Update>
+      </elem>
+    </MCUpdates>
+  </doHMC>
+</hmc>
