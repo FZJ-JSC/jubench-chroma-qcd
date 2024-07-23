@@ -1,3 +1,7 @@
+llvm_vers=16.0.6
+qmp_vers=2-5-4
+
+
 
 
 . ./env-MODULES.sh

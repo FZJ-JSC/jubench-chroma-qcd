@@ -18,16 +18,35 @@ echo ${SRCDIR}
 
 
 #get llvm if you do not already have nvptx-enabled llvm
-git clone --depth=1 --branch  llvmorg-14.0.6 https://github.com/llvm/llvm-project.git
 
-#get llvm if you do not already have it
+mkdir -p llvm-project
+cd llvm-project
+
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${llvm_vers}/llvm-${llvm_vers}.src.tar.xz
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${llvm_vers}/third-party-${llvm_vers}.src.tar.xz
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${llvm_vers}/cmake-${llvm_vers}.src.tar.xz
+
+tar -Jxvf llvm-${llvm_vers}.src.tar.xz
+tar -Jxvf third-party-${llvm_vers}.src.tar.xz
+tar -Jxvf cmake-${llvm_vers}.src.tar.xz
+
+mv third-party-${llvm_vers}.src third-party
+mv cmake-${llvm_vers}.src cmake
+
+
+cd ${SRCDIR}
+
+
+#get libxml if you do not already have it
 #git clone --branch v2.9.14 https://github.com/GNOME/libxml2.git
 
-#QMP is ususlly a a wrapper for MPI
-git clone --branch qmp2-5-4 https://github.com/usqcd-software/qmp.git
-#checkout specific commit
-cd qmp/
-git checkout fac2e9b9db2448994d338786b211ec67ff9553b2
+#QMP is usually just a wrapper for MPI
+wget https://github.com/usqcd-software/qmp/archive/refs/tags/qmp${qmp_vers}.tar.gz
+echo tar xvzf qmp${qmp_vers}.tar.gz
+tar xvzf qmp${qmp_vers}.tar.gz
+mv  qmp-qmp${qmp_vers} qmp
+
+
 cd ${SRCDIR}
 
 

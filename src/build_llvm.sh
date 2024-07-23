@@ -1,7 +1,7 @@
 #!/bin/bash
 source ./env.sh
 
-cmake -S ${SRCDIR}/llvm-project/llvm -B ${BUILDDIR}/build_llvm \
+cmake -S ${SRCDIR}/llvm-project/llvm-${llvm_vers}.src -B ${BUILDDIR}/build_llvm \
 -DLLVM_ENABLE_TERMINFO="OFF" \
 -DCMAKE_BUILD_TYPE=Release \
 -DCMAKE_INSTALL_PREFIX=${LLVM_INSTALLDIR} \
